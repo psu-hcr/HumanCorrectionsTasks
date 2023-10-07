@@ -91,14 +91,14 @@ def correct():
 C1a, C2a, C3a, C4a, C5a, C6a, C7a, reset_a = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
 C1a.x, C1a.y, C1a.z = x, 0, 0.25
 C2a.x, C2a.y, C2a.z = 0.85, 0, 0.25
-C3a.x, C3a.y, C3a.z = x, 0, 0.2
-C4a.x, C4a.y, C4a.z = x, 0, 0.07
+C3a.x, C3a.y, C3a.z = 0.85, 0, 0.2
+C4a.x, C4a.y, C4a.z = x, 0, 0.2
+C5a.x, C5a.y, C5a.z = x, 0, 0.07
 #Reset keeps the peg from knocking over the box when it goes back to joint perch
-reset_a_x, reset_a_y, reset_a_z = 0.69, 0, 0.2
-reset_a.x, reset_a.y, reset_a.z = reset_a_x, reset_a_y, reset_a_z
+reset_a.x, reset_a.y, reset_a.z = x, 0, 0.2
 
 #Putting points into list
-sub_opt_pos = [C1a, C2a, C3a, C4a, C5a, C6a, C7a]
+sub_opt_pos = [C1a, C2a, C3a, C4a, C5a]
 
 def sub_opt():
     count = 0
@@ -106,15 +106,11 @@ def sub_opt():
         iiwa.pose.header.frame_id = 'iiwa_link_0'
         iiwa.pose.pose.position = cartesian_pos
         #After the moving the peg into place, rotate the endeffector downwards
-        if count < 4:
-        	iiwa.pose.pose.orientation = QUAT
-        	pause = 1.8
-        elif count == 4:
+        if count >= 3:
+        	iiwa.pose.pose.orientation = QUAT1
+        else:
         	pause = 4
-        	iiwa.pose.pose.orientation = QUAT1
-        elif count > 4:
-        	iiwa.pose.pose.orientation = QUAT1
-        	pause = 1.8
+        	iiwa.pose.pose.orientation = QUAT
         iiwa.move_carte(iiwa.pose, commit=True)
         time.sleep(pause)
         count = count + 1
@@ -128,10 +124,10 @@ def sub_opt():
 # Define cartesian points for collision trajectory
 #Peg hits box from the side
 C1b, C2b, C3b, reset_b = Point(), Point(), Point(), Point()
-xb = 0.7
+xb = 0.68
 C1b.x, C1b.y, C1b.z = xb, -0.4, 0.25
 C2b.x, C2b.y, C2b.z = xb, -0.4, 0.1
-C3b.x, C3b.y, C3b.z = xb, -0.1, 0.07
+C3b.x, C3b.y, C3b.z = xb, 0, 0.07
 #Reset keeps the peg from knocking over the box when it goes back to joint perch
 reset_b.x, reset_b.y, reset_b.z = x, -0.1, 0.2
 
@@ -158,14 +154,15 @@ def side_collision():
     #Reset to joint perch
     iiwa.move_joint(JOINT_PERCH, commit=True)
 
-# Define cartesian points for wrong hole trajectory
-#Peg goes into wrong hole
+# Define cartesian points for first wrong hole trajectory
+#Peg goes into square hole
 C1c, C2c, C3c, reset_c = Point(), Point(), Point(), Point()
-C1c.x, C1c.y, C1c.z = x, 0, 0.25
-C2c.x, C2c.y, C2c.z = x, -0.06, 0.2
-C3c.x, C3c.y, C3c.z = x, -0.06, 0.07
+x_c = 0.69
+C1c.x, C1c.y, C1c.z = x_c, 0, 0.25
+C2c.x, C2c.y, C2c.z = x_c, -0.065, 0.2
+C3c.x, C3c.y, C3c.z = x_c, -0.065, 0.07
 #Reset keeps the peg from knocking over the box when it goes back to joint perch
-reset_c.x, reset_c.y, reset_c.z = reset_c_x, -0.06, 0.2
+reset_c.x, reset_c.y, reset_c.z = C3c.x, C3c.y, 0.2
 
 #Putting points into list
 wrong_hole1_pos = [C1c, C2c, C3c]
@@ -189,6 +186,39 @@ def wrong_hole1():
     time.sleep(5)
     #Reset to joint perch
     iiwa.move_joint(JOINT_PERCH, commit=True)
+    
+# Define cartesian points for second wrong hole trajectory
+#Peg goes into hexagon hole
+C1e, C2e, C3e, C4e, reset_d = Point(), Point(), Point(), Point(), Point()
+x_e = 0.69
+C1e.x, C1e.y, C1e.z = x_e, 0, 0.25
+C2e.x, C2e.y, C2e.z = x_e, 0.07, 0.2
+C3e.x, C3e.y, C3e.z = x_e, 0.07, 0.07
+#Reset keeps the peg from knocking over the box when it goes back to joint perch
+reset_d.x, reset_d.y, reset_d.z = x, 0.08, 0.25
+
+#Putting points into list
+wrong_hole2_pos = [C1e, C2e, C3e]
+
+def wrong_hole2():
+    count = 0
+    for cartesian_pos in wrong_hole2_pos:
+        iiwa.pose.header.frame_id = 'iiwa_link_0'
+        iiwa.pose.pose.position = cartesian_pos
+        #After the moving the peg into place, rotate the endeffector downwards
+        if count > 0:
+        	iiwa.pose.pose.orientation = QUAT1
+        else:
+        	iiwa.pose.pose.orientation = QUAT
+        iiwa.move_carte(iiwa.pose, commit=True)
+        time.sleep(5)
+        count = count + 1
+    #Raising peg out of peg box	
+    iiwa.pose.pose.position = reset_d
+    iiwa.move_carte(iiwa.pose, commit=True)
+    time.sleep(5)
+    #Reset to joint perch
+    iiwa.move_joint(JOINT_PERCH, commit=True)
 
 #Define cartesian points for hitting edge of correct hole trajectory
 #Peg moves to correct hole but misses very slightly
@@ -200,7 +230,7 @@ C3d.x, C3d.y, C3d.z = x, 0.03, 0.07
 reset_d.x, reset_d.y, reset_d.z = x, 0.03, 0.25
 
 #Putting points into list
-close_to_hole1_pos = [C1d, C2d, C3d]
+close_to_hole_pos = [C1d, C2d, C3d]
 
 def close_to_hole():
     count = 0
@@ -222,40 +252,8 @@ def close_to_hole():
     #Reset to joint perch
     iiwa.move_joint(JOINT_PERCH, commit=True)
 
-# Define cartesian points for wrong hole trajectory
-#Peg goes into wrong hole
-C1e, C2e, C3e, C4e, reset_d = Point(), Point(), Point(), Point(), Point()
-C1e.x, C1e.y, C1e.z = x, 0, 0.25
-C2e.x, C2e.y, C2e.z = x, 0.06, 0.2
-C3e.x, C3e.y, C3e.z = x, 0.06, 0.07
-#Reset keeps the peg from knocking over the box when it goes back to joint perch
-reset_d.x, reset_d.y, reset_d.z = x, 0, 0.25
-
-#Putting points into list
-wrong_hole2_pos = [C1e, C2e, C3e]
-
-def wrong_hole2():
-    count = 0
-    for cartesian_pos in wrong_hole2_pos:
-        iiwa.pose.header.frame_id = 'iiwa_link_0'
-        iiwa.pose.pose.position = cartesian_pos
-        #After the moving the peg into place, rotate the endeffector downwards
-        if count > 0:
-        	iiwa.pose.pose.orientation = QUAT1
-        else:
-        	iiwa.pose.pose.orientation = QUAT
-        iiwa.move_carte(iiwa.pose, commit=True)
-        time.sleep(5)
-        count = count + 1
-    #Raising peg out of peg box	
-    iiwa.pose.pose.position = reset_c
-    iiwa.move_carte(iiwa.pose, commit=True)
-    time.sleep(5)
-    #Reset to joint perch
-    iiwa.move_joint(JOINT_PERCH, commit=True)
-
 #Put erroneous trajectories into list
-trajectories = [sub_opt, side_collision, wrong_hole, wrong_hole2, close_to_hole]
+trajectories = [correct, sub_opt, side_collision, wrong_hole1, wrong_hole2, close_to_hole]
 
 #Wake KUKA Up
 time.sleep(5)
@@ -264,9 +262,12 @@ iiwa.move_joint(JOINT_PERCH, commit=True)
 time.sleep(5)
 
 #Demonstrate correcct trajectory
-wrong_hole()
+correct()
 
-"""
+iiwa.move_joint(JOINT_PERCH, commit=True)
+
+input("Press enter to continue")
+
 #Loop through erroneous trajectories randomly
 while len(trajectories) > 0:
 	traj_to_run = random.choice(trajectories)
@@ -274,7 +275,7 @@ while len(trajectories) > 0:
 	trajectories.remove(traj_to_run)
 	time.sleep(5)
 	iiwa.move_joint(JOINT_PERCH, commit=True)
-	time.sleep(5)
-"""
+	input("Press enter to continue")
+	time.sleep(1)
 
 print("Finished!")
