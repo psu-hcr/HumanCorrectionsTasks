@@ -39,21 +39,20 @@ JOINT_PERCH.position.a5 = -27/180 * np.pi
 JOINT_PERCH.position.a6 = -81/180 * np.pi
 JOINT_PERCH.position.a7 = 46/180 * np.pi
 
-#Define quaternion that makes end effector parallel to ground in positive x direction
+#Define quaternion that makes end effector parallel to ground
 QUAT = Quaternion()
 QUAT.x = 0
 QUAT.y = 0.707
 QUAT.z = 0
 QUAT.w = 0.707
 
-#Define quaternion that turns the end effector to pour cup
+#Define quaternion that makes end effector perpendicular to ground
 QUAT1 = Quaternion()
 QUAT1.x = -0.653
 QUAT1.y = 0.271
 QUAT1.z = -0.653
 QUAT1.w = 0.271
 
-#Define quaternion that makes end effector parallel to ground in negative x direction
 QUAT2 = Quaternion()
 QUAT2.x = -0.707
 QUAT2.y = -0
@@ -78,17 +77,17 @@ C12.x, C12.y, C12.z = x, -C9.y, C9.z
 C13.x, C13.y, C13.z = x, -C8.y, C8.z
 C14.x, C14.y, C14.z = x, -C7.y, C7.z
 C15.x, C15.y, C15.z = x, -C6.y, C6.z
-C16.x, C16.y, C16.z = x, -C5.y, C5.z
-C17.x, C17.y, C17.z = x, -C4.y, C4.z
+C16.x, C16.y, C16.z = x, 0.38, C5.z
+C17.x, C17.y, C17.z = x, 0.4, C4.z
 C18.x, C18.y, C18.z = x, -C3.y, C3.z
 C19.x, C19.y, C19.z = x, -C2.y, C2.z
 C20.x, C20.y, C20.z = x, -C1.y, C1.z
 
-#Reset so the end effector does not knock over the box
-reset = Point()
-reset.x, reset.y, reset.z = x, -C1.y, 0.4
+reset1, reset2, reset3 = Point(), Point(), Point()
+reset1.x, reset1.y, reset1.z = x, -C1.y, 0.6
+reset2.x, reset2.y, reset2.z = x, 0, 0.6
+reset3.x, reset3.y, reset3.z = x, -0.2, 0.6
 
-#Put cartesian points into list
 correct_pos = [C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20]
 
 def correct():
@@ -107,25 +106,32 @@ def correct():
         iiwa.move_carte(iiwa.pose, commit=True)
         time.sleep(sleep)
         count = count + 1
-    iiwa.pose.pose.position = reset
+    iiwa.pose.pose.position = reset1
     iiwa.move_carte(iiwa.pose, commit = True)
     time.sleep(sleep)
+    iiwa.pose.pose.position = reset2
+    iiwa.move_carte(iiwa.pose, commit = True)
+    time.sleep(sleep)
+    iiwa.pose.pose.position = reset3
+    iiwa.move_carte(iiwa.pose, commit = True)
+    time.sleep(sleep)
+    
     
 #Define cartesian points for sub-optimal trajectory
 #This trajectory takes a much higher than necessary path over the obstacle
 C1a, C2a, C3a, C4a, C5a, C6a, C7a, C8a, C9a, C10a, C11a, C12a, C13a, C14a, C15a, C16a, C17a, C18a, C19a, C20a = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
 x = 0.72
 C1a.x, C1a.y, C1a.z = x, -0.5, 0.1
-C2a.x, C2a.y, C2a.z = x, -0.46, 0.2
-C3a.x, C3a.y, C3a.z = x, -0.42, 0.3
-C4a.x, C4a.y, C4a.z = x, -0.38, 0.4
-C5a.x, C5a.y, C5a.z = x, -0.34, 0.5
-C6a.x, C6a.y, C6a.z = x, -0.3, 0.6
-C7a.x, C7a.y, C7a.z = x, -0.225, 0.52
-C8a.x, C8a.y, C8a.z = x, -0.15, 0.44
-C9a.x, C9a.y, C9a.z = x, -0.075, 0.36
-C10a.x, C10a.y, C10a.z = x, 0, 0.28
-C11a.x, C11a.y, C11a.z = x, -0.05, 0.2
+C2a.x, C2a.y, C2a.z = x, -0.46, 0.21
+C3a.x, C3a.y, C3a.z = x, -0.42, 0.32
+C4a.x, C4a.y, C4a.z = x, -0.38, 0.43
+C5a.x, C5a.y, C5a.z = x, -0.34, 0.54
+C6a.x, C6a.y, C6a.z = x, -0.3, 0.65
+C7a.x, C7a.y, C7a.z = x, -0.225, 0.5625
+C8a.x, C8a.y, C8a.z = x, -0.15, 0.475
+C9a.x, C9a.y, C9a.z = x, -0.075, 0.3875
+C10a.x, C10a.y, C10a.z = x, 0, 0.3
+C11a.x, C11a.y, C11a.z = x, -0.05, 0.3
 C12a.x, C12a.y, C12a.z = x, -C9a.y, C9a.z
 C13a.x, C13a.y, C13a.z = x, -C8a.y, C8a.z
 C14a.x, C14a.y, C14a.z = x, -C7a.y, C7a.z
@@ -136,7 +142,6 @@ C18a.x, C18a.y, C18a.z = x, -C3a.y, C3a.z
 C19a.x, C19a.y, C19a.z = x, -C2a.y, C2a.z
 C20a.x, C20a.y, C20a.z = x, -C1a.y, C1a.z
 
-#Put cartesian points into list
 sub_opt_pos = [C1a, C2a, C3a, C4a, C5a, C6a, C7a, C8a, C9a, C10a, C11a, C12a, C13a, C14a, C15a, C16a, C17a, C18a, C19a, C20a]
 
 def sub_opt():
@@ -161,7 +166,6 @@ def sub_opt():
     time.sleep(sleep)
 
 # Define cartesian points for collision trajectory
-#Hits the first obstacle
 C1b, C2b, C3b, C4b, C5b, C6b, C7b, C8b, C9b, C10b, C11b, C12b, C13b, C14b, C15b, C16b, C17b = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
 x = 0.72
 C1b.x, C1b.y, C1b.z = x, -0.5, 0.1
@@ -182,7 +186,6 @@ C15b.x, C15b.y, C15b.z = x, -C3.y, C3.z
 C16b.x, C16b.y, C16b.z = x, -C2.y, C2.z
 C17b.x, C17b.y, C17b.z = x, -C1.y, C1.z
 
-#Put cartesian points into list
 collision1_pos = [C1b, C2b, C3b, C4b, C5b, C6b, C7b, C8b, C9b, C10b, C11b, C12b, C13b, C14b, C15b, C16b, C17b]
 
 def collision1():
@@ -204,10 +207,9 @@ def collision1():
     time.sleep(5)
     iiwa.pose.pose.position = reset
     iiwa.move_carte(iiwa.pose, commit = True)
-    time.sleep(sleep)	
+    time.sleep(sleep)
 
-#Define the cartesian points for the collision trajectory
-#Hits the second obstacle
+
 C1c, C2c, C3c, C4c, C5c, C6c, C7c, C8c, C9c, C10c, C11c, C12c, C13c, C14c, C15c, C16c, C17c = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
 x = 0.72
 C1c.x, C1c.y, C1c.z = x, C1.y, C1.z
@@ -228,8 +230,9 @@ C15c.x, C15c.y, C15c.z = x, 0.42, 0.172
 C16c.x, C16c.y, C16c.z = x, 0.46, 0.136
 C17c.x, C17c.y, C17c.z = x, 0.5, 0.1 
 
-#Put cartesian points into list
 collision2_pos = [C1c, C2c, C3c, C4c, C5c, C6c, C7c, C8c, C9c, C10c, C11c, C12c, C13c, C14c, C15c, C16c, C17c]
+
+
 
 def collision2():
     count = 0
@@ -252,7 +255,6 @@ def collision2():
     iiwa.move_carte(iiwa.pose, commit = True)
     time.sleep(sleep)
 
-#Early pour trajectory has the same cartesian points as the correct trajectory, the only difference is when the cup pours
 def early_pour():
     count = 0
     sleep = 2
@@ -274,8 +276,6 @@ def early_pour():
     iiwa.move_carte(iiwa.pose, commit = True)
     time.sleep(2)
 
-#Define cartesian points for backwards start trajectory
-#Kuka starts facing the opposite direction from the correct trajectory and goes through a few points facing the wrong way
 C1d, C2d, C3d, C4d, C5d, C6d, C7d, C8d, C9d, C10d, C11d, C12d, C13d, C14d, C15d, C16d, C17d, C18d, C19d, C20d, C21d, C22d, C23d, C24d, C25d, C26d, C27d = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
 x = 0.72
 C1d.x, C1d.y, C1d.z = -x, C1.y, C1.z
@@ -306,7 +306,7 @@ C25d.x, C25d.y, C25d.z = x, C18.y, C18.z
 C26d.x, C26d.y, C26d.z = x, C19.y, C19.z
 C27d.x, C27d.y, C27d.z = x, C20.y, C20.z
 
-#Put cartesian points into a list
+
 backwards_pos = [C1d, C2d, C3d, C4d, C5d, C6d, C7d, C8d, C9d, C10d, C11d, C12d, C13d, C14d, C15d, C16d, C17d, C18d, C19d, C20d, C21d, C22d, C23d, C24d, C25d, C26d, C27d]
 
 def backwards():
@@ -339,7 +339,6 @@ def backwards():
     iiwa.move_carte(iiwa.pose, commit = True)
     time.sleep(2)
 
-#Add all the trajectory functions into a list
 trajectories = [correct, sub_opt, collision1, collision2, early_pour, backwards]
 
 #Wake KUKA Up
@@ -347,20 +346,22 @@ time.sleep(2)
 # Move robot to joint perch
 iiwa.move_joint(JOINT_PERCH, commit=True)
 time.sleep(5)
-
-#Demonstrate correct trajectory to participant
+        
+#Demonstrate correct trajectory
 correct()
 
-#Randomly loop through different trajectories and move back to joint perch at the end of each one
+iiwa.move_joint(JOINT_PERCH, commit=True)
+
+input("Press enter to continue")
+
+#Loop through erroneous trajectories randomly
 while len(trajectories) > 0:
 	traj_to_run = random.choice(trajectories)
 	traj_to_run()
 	trajectories.remove(traj_to_run)
 	time.sleep(5)
 	iiwa.move_joint(JOINT_PERCH, commit=True)
-	time.sleep(5)
-	
-iiwa.move_joint(JOINT_PERCH, commit=True)
-time.sleep(5)
-print("Finished!")
+	input("Press enter to continue")
+	time.sleep(1)
 
+print("Finished!")
