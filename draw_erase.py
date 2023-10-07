@@ -49,28 +49,28 @@ QUAT.w = 0.707
 #Define quaternion that makes end effector perpendicular to ground with marker pointing in positive z direction
 QUAT1 = Quaternion()
 QUAT1.x = 0
-QUAT1.y = 0
+QUAT1.y = 1
 QUAT1.z = 0
-QUAT1.w = 1
+QUAT1.w = 0
 
 # Define cartesian points for correct trajectory
-C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12 = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
-x = 0.6
-C1.x, C1.y, C1.z = x, -0.2, 0.2
-C2.x, C2.y, C2.z = x, -0.2, 0.6
-C3.x, C3.y, C3.z = x, 0.2, 0.6
-C4.x, C4.y, C4.z = x, 0.2, 0.2
-C5.x, C5.y, C5.z = x, -0.2, 0.2
-C6.x, C6.y, C6.z = 0.5, -0.2, 0.2
-C7.x, C7.y, C7.z = x, C1.y, C1.z
-C8.x, C8.y, C8.z = x, C2.y, C2.z
-C9.x, C9.y, C9.z = x, C3.y, C3.z
-C10.x, C10.y, C10.z = x, C4.y, C4.z
-C11.x, C11.y, C11.z = x, C5.y, C5.z
-C12.x, C12.y, C12.z = x, C1.y, C1.z
-
-reset = Point()
-reset.x, reset.y, reset.z = 0.5, C11.y, C11.z
+C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13 = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
+x = 0.75
+x1 = 0.84
+x2 = 0.84
+C1.x, C1.y, C1.z = 0.6, -0.1, 0.3
+C2.x, C2.y, C2.z = x, -0.1, 0.3
+C3.x, C3.y, C3.z = x, -0.1, 0.5
+C4.x, C4.y, C4.z = x, 0.1, 0.5
+C5.x, C5.y, C5.z = x, 0.1, 0.3
+C6.x, C6.y, C6.z = x, -0.1, 0.3
+C7.x, C7.y, C7.z = 0.5, -0.1, 0.25
+C8.x, C8.y, C8.z = x1, -0.05, 0.25
+C9.x, C9.y, C9.z = x1, -0.05, 0.45
+C10.x, C10.y, C10.z = x2, 0.15, 0.45
+C11.x, C11.y, C11.z = x1, 0.15, 0.25
+C12.x, C12.y, C12.z = x2, -0.05, 0.25
+C13.x, C13.y, C13.z = 0.5, C1.y, C1.z
 
 correct_pos = [C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12]
 
@@ -81,33 +81,24 @@ def correct():
         iiwa.pose.header.frame_id = 'iiwa_link_0'
         iiwa.pose.pose.position = cartesian_pos
         #Rotate the end effector to eraser side
-        if count >= 6:
-        	iiwa.pose.pose.orientation = QUAT1
-        	sleep = 5
-            if count == 6:
-                sleep = 5
-            elif count > 6:
-                sleep = 2
-        else:
+        if count >= 7:
         	iiwa.pose.pose.orientation = QUAT
-        	sleep = 2
+        else:
+        	iiwa.pose.pose.orientation = QUAT1
         iiwa.move_carte(iiwa.pose, commit=True)
-        time.sleep(sleep)
+        time.sleep(5)
         count = count + 1
-    time.sleep(5)
-    iiwa.pose.pose.position = reset
-    iiwa.move_carte(iiwa.pose, commit = True)
     time.sleep(5)
     
 #Define cartesian points for sub optimal trajectory
 #The robot draws the square twice before erasing
 C1a, C2a, C3a, C4a, C5a, C6a, C7a, C8a, C9a, C10a, C11a, C12a, C13a, C14a, C15a, C16a, C17a = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
-x = 0.6
-C1a.x, C1a.y, C1a.z = x, -0.2, 0.2
-C2a.x, C2a.y, C2a.z = x, -0.2, 0.6
-C3a.x, C3a.y, C3a.z = x, 0.2, 0.6
-C4a.x, C4a.y, C4a.z = x, 0.2, 0.2
-C5a.x, C5a.y, C5a.z = x, -0.2, 0.2
+x = 0.65
+C1a.x, C1a.y, C1a.z = x, -0.1, 0.2
+C2a.x, C2a.y, C2a.z = x, -0.1, 0.4
+C3a.x, C3a.y, C3a.z = x, 0.1, 0.4
+C4a.x, C4a.y, C4a.z = x, 0.1, 0.2
+C5a.x, C5a.y, C5a.z = x, -0.1, 0.2
 C6a.x, C6a.y, C6a.z = x, C1.y, C1.z
 C7a.x, C7a.y, C7a.z = x, C2.y, C2.z
 C8a.x, C8a.y, C8a.z = x, C3.y, C3.z
@@ -131,30 +122,25 @@ def sub_opt():
         iiwa.pose.pose.position = cartesian_pos
         #Rotate the end effector to eraser side
         if count >= 11:
-        	iiwa.pose.pose.orientation = QUAT1
-        	if count == 11:
-                sleep = 5
-            elif count > 11:
-                sleep = 2
-        else:
         	iiwa.pose.pose.orientation = QUAT
-        	sleep = 2
+        else:
+        	iiwa.pose.pose.orientation = QUAT1
+        	sleep = 5
         iiwa.move_carte(iiwa.pose, commit=True)
         time.sleep(sleep)
         count = count + 1
     time.sleep(5)
-    iiwa.pose.pose.position = reset
-    iiwa.move_carte(iiwa.pose, commit = True)
-    time.sleep(5)
-    
-C1b, C2b, C3b, C4b, C5b, C6b, C7b, C8b, C9b, C10b, C11b = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
-x = 0.6
-C1b.x, C1b.y, C1b.z = x, -0.2, 0.4
-C2b.x, C2b.y, C2b.z = x, -0.2, 0.8
-C3b.x, C3b.y, C3b.z = x, 0.2, 0.8
-C4b.x, C4b.y, C4b.z = x, 0.2, 0.4
-C5b.x, C5b.y, C5b.z = x, -0.2, 0.4
-C6b.x, C6b.y, C6b.z = 0.5, -0.2, 0.2
+
+#Define cartesian points for too high trajectory
+#Drawn square is above the bounded box    
+C1b, C2b, C3b, C4b, C5b, C6b, C7b, C8b, C9b, C10b, C11b, C12b = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
+x = 0.65
+C1b.x, C1b.y, C1b.z = x, -0.1, 0.2
+C2b.x, C2b.y, C2b.z = x, -0.1, 0.4
+C3b.x, C3b.y, C3b.z = x, 0.1, 0.4
+C4b.x, C4b.y, C4b.z = x, 0.1, 0.2
+C5b.x, C5b.y, C5b.z = x, -0.1, 0.2
+C6b.x, C6b.y, C6b.z = 0.5, -0.1, 0.2
 C7b.x, C7b.y, C7b.z = x, C1b.y, C1b.z
 C8b.x, C8b.y, C8b.z = x, C2b.y, C2b.z
 C9b.x, C9b.y, C9b.z = x, C3b.y, C3b.z
@@ -172,36 +158,31 @@ def too_high():
         iiwa.pose.pose.position = cartesian_pos
         #Rotate the end effector to eraser side
         if count >= 6:
-        	iiwa.pose.pose.orientation = QUAT1
-            if count == 6:
-                sleep = 5
-            elif count > 6:
-                sleep = 2
-        else:
         	iiwa.pose.pose.orientation = QUAT
-        	sleep = 2
+        else:
+        	iiwa.pose.pose.orientation = QUAT1
+        	sleep = 5
         iiwa.move_carte(iiwa.pose, commit=True)
-        time.sleep(sleep)
+        time.sleep(5)
         count = count + 1
     time.sleep(5)
-    iiwa.pose.pose.position = reset
-    iiwa.move_carte(iiwa.pose, commit = True)
-    time.sleep(5)
-    
-C1c, C2c, C3c, C4c, C5c, C6c, C7c, C8c, C9c, C10c, C11c = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
-x = 0.4
-C1c.x, C1c.y, C1c.z = x, -0.2, 0.2
-C2c.x, C2c.y, C2c.z = x, -0.2, 0.6
-C3c.x, C3c.y, C3c.z = x, 0.2, 0.6
-C4c.x, C4c.y, C4c.z = x, 0.2, 0.2
-C5c.x, C5c.y, C5c.z = x, -0.2, 0.2
-C6c.x, C6c.y, C6c.z = 0.5, -0.2, 0.2
-C7c.x, C7c.y, C7c.z = x, C1c.y, C1c.z
-C8c.x, C8c.y, C8c.z = x, C2c.y, C2c.z
-C9c.x, C9c.y, C9c.z = x, C3c.y, C3c.z
-C10c.x, C10c.y, C10c.z = x, C4c.y, C4c.z
-C11c.x, C11c.y, C11c.z = x, C5c.y, C5c.z
-C12c.x, C12c.y, C12c.z = x, C1c.y, C1c.z
+
+#Define cartesian points for not close trajectory
+#Robot is not drawing on the board but in open space    
+C1c, C2c, C3c, C4c, C5c, C6c, C7c, C8c, C9c, C10c, C11c, C12c = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
+x_c = 0.6
+C1c.x, C1c.y, C1c.z = x_c, -0.1, 0.2
+C2c.x, C2c.y, C2c.z = x_c, -0.1, 0.4
+C3c.x, C3c.y, C3c.z = x_c, 0.1, 0.4
+C4c.x, C4c.y, C4c.z = x_c, 0.1, 0.2
+C5c.x, C5c.y, C5c.z = x_c, -0.1, 0.2
+C6c.x, C6c.y, C6c.z = 0.5, -0.1, 0.2
+C7c.x, C7c.y, C7c.z = x_c, C1c.y, C1c.z
+C8c.x, C8c.y, C8c.z = x_c, C2c.y, C2c.z
+C9c.x, C9c.y, C9c.z = x_c, C3c.y, C3c.z
+C10c.x, C10c.y, C10c.z = x_c, C4c.y, C4c.z
+C11c.x, C11c.y, C11c.z = x_c, C5c.y, C5c.z
+C12c.x, C12c.y, C12c.z = x_c, C1c.y, C1c.z
 
 not_close_pos = [C1c, C2c, C3c, C4c, C5c, C6c, C7c, C8c, C9c, C10c, C11c, C12c]
 
@@ -213,24 +194,19 @@ def not_close():
         iiwa.pose.pose.position = cartesian_pos
         #Rotate the end effector to eraser side
         if count >= 6:
-        	iiwa.pose.pose.orientation = QUAT1
-            if count == 6:
-                sleep = 5
-            elif count > 6:
-                sleep = 2
-        else:
         	iiwa.pose.pose.orientation = QUAT
-        	sleep = 2
+        else:
+        	iiwa.pose.pose.orientation = QUAT1
+        	sleep = 5
         iiwa.move_carte(iiwa.pose, commit=True)
         time.sleep(sleep)
         count = count + 1
     time.sleep(5)
-    iiwa.pose.pose.position = reset
-    iiwa.move_carte(iiwa.pose, commit = True)
-    time.sleep(5)
 
-C1d, C2d, C3d, C4d, C5d, C6d, C7d, C8d, C9d, C10d, C11d, C12d, C13d, reset_d = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
-x = 0.6
+#Define cartesian points for wrong shape trajectory
+#Robot draws a star instead of a square
+C1d, C2d, C3d, C4d, C5d, C6d, C7d, C8d, C9d, C10d, C11d, C12d, C13d, C14d, reset_d = Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point(), Point()
+x = 0.65
 C1d.x, C1d.y, C1d.z = x, -0.3, 0.4
 C2d.x, C2d.y, C2d.z = x, 0.3, 0.4
 C3d.x, C3d.y, C3d.z = x, -0.2, 0.2
@@ -246,9 +222,6 @@ C12d.x, C12d.y, C12d.z = x, C5d.y, C5d.z
 C13d.x, C13d.y, C13d.z = x, C6d.y, C6d.z
 C14d.x, C14d.y, C14d.z = x, C1d.y, C1d.z
 
-reset_d = C1d
-reset_d.x = 0.5
-
 wrong_shape_pos = [C1d, C2d, C3d, C4d, C5d, C6d, C7d, C8d, C9d, C10d, C11d, C12d, C13d, C14d]
 
 def wrong_shape():
@@ -259,20 +232,13 @@ def wrong_shape():
         iiwa.pose.pose.position = cartesian_pos
         #Rotate the end effector to eraser side
         if count >= 7:
-        	iiwa.pose.pose.orientation = QUAT1
-            if count == 7:
-                sleep = 5
-            elif count > 7:
-                sleep = 2
-        else:
         	iiwa.pose.pose.orientation = QUAT
-        	sleep = 2
+        else:
+        	iiwa.pose.pose.orientation = QUAT1
+        	sleep = 5
         iiwa.move_carte(iiwa.pose, commit=True)
         time.sleep(sleep)
         count = count + 1
-    time.sleep(5)
-    iiwa.pose.pose.position = reset_d
-    iiwa.move_carte(iiwa.pose, commit = True)
     time.sleep(5)
 
 trajectories = [correct, sub_opt, too_high, not_close, wrong_shape]
@@ -283,14 +249,21 @@ time.sleep(2)
 iiwa.move_joint(JOINT_PERCH, commit=True)
 time.sleep(5)
         
+#Demonstrate correct trajectory
+correct()
+
+iiwa.move_joint(JOINT_PERCH, commit=True)
+
+input("Press enter to continue")
+
+#Loop through erroneous trajectories randomly
 while len(trajectories) > 0:
 	traj_to_run = random.choice(trajectories)
 	traj_to_run()
 	trajectories.remove(traj_to_run)
 	time.sleep(5)
 	iiwa.move_joint(JOINT_PERCH, commit=True)
-	time.sleep(5)
-	
-iiwa.move_joint(JOINT_PERCH, commit=True)
-time.sleep(5)
+	input("Press enter to continue")
+	time.sleep(1)
+
 print("Finished!")
