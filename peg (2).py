@@ -257,20 +257,24 @@ trajectories = [correct, sub_opt, side_collision, wrong_hole1, wrong_hole2, clos
 
 #Wake KUKA Up
 time.sleep(5)
+
+input("Press enter to continue")
+
 # Move robot to joint perch
 iiwa.move_joint(JOINT_PERCH, commit=True)
 time.sleep(5)
 
-#Demonstrate correcct trajectory
-correct()
+input("Press enter to continue")
 
-iiwa.move_joint(JOINT_PERCH, commit=True)
+#Demonstrate correct trajectory
+correct()
 
 input("Press enter to continue")
 
 #Loop through erroneous trajectories randomly
 while len(trajectories) > 0:
 	traj_to_run = random.choice(trajectories)
+	print("Currently running the " + traj_to_run.__name__ + " trajectory")
 	traj_to_run()
 	trajectories.remove(traj_to_run)
 	time.sleep(5)
