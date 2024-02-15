@@ -7,8 +7,8 @@ In each subfolder, there are also have a txt file which contains the "correct" t
 # Use
 1. Chnage the folder path to the path of your task folder.
 2. Plot
-   `python3 your_python_script_name.py`
+   `python3 plot_interaction.py`
 3. Output to csv
-   `python3 your_python_script_name.py`
+   `python3 correct_clculation.py`
 4. Get "Correct" trajectory
-   `python3 your_python_script_name.py`
+   `python3 correct_clculation.py`
