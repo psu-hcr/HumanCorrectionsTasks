@@ -9,9 +9,9 @@ p_data <- read.csv("/home/qxa5031/iiwa_ws/src/haptics_controls/src/Data/alldata.
 #attach the data to the script so we can use the headers to call data sets
 df <- attach(p_data)
 #assign our factors
-subj <-factor(Participant Number)
+subj <-factor(Participant)
 error <-factor(Error Type)
-trial <-factor(Trial Number)
+trial <-factor(Trial)
 
 print("Anova Results for the Angle of Motion")
 #compute anova for angle measures
