@@ -1,9 +1,8 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+import csv
 
 # Define a function to extract data from a text file and normalize the 'field.poseStamped.header.seq' column
 def extract_and_normalize_data(file_path):
@@ -18,7 +17,7 @@ def extract_and_normalize_data(file_path):
     scaler = MinMaxScaler()
     df['normalized_seq'] = scaler.fit_transform(df[['field.poseStamped.header.seq']])
 
-    return df
+    return df	
 
 
 
@@ -60,7 +59,7 @@ def process_text_file(file_path, sampling_rate=1/200):
     df = pd.read_csv(file_path, sep=',')
 
     # Read the standard data (assuming the standard data is in a file named "standard_CP.txt" in the same directory)
-    standard_file_path = os.path.join(os.path.dirname(file_path), "CP_draw_correct.txt")
+    standard_file_path = os.path.join(os.path.dirname(file_path), "CP_pour_correct.txt")
     standard_df = pd.read_csv(standard_file_path, sep=',')
 
     # Ensure that the data frames have the same number of rows
@@ -80,134 +79,110 @@ def process_text_file(file_path, sampling_rate=1/200):
             total_interaction_time += time_period
 
     return df, interaction_start_points, interaction_stop_points, total_interaction_time
-"""
-# Directory containing your text files
-directory_path_correct = '/home/jvp6149/Desktop/bagfiles_Pang/organized Tiral 9/peg_correct'
-
-# List of file names you want to process, including "standard_CP.txt" and others
-file_names_correct = ["CP_peg_correct.txt", "CP_peg_1_correct.txt", "CP_peg_2_correct.txt", "CP_peg_4.txt", "CP_peg_6.txt", "CP_peg_14.txt", "CP_peg_16.txt", "CP_peg_26.txt", "CP_peg_37.txt"]
-
-for file_name in file_names_correct:
-    file_path = os.path.join(directory_path_correct, file_name)
-    data, interaction_start_points, interaction_stop_points, total_interaction_time = process_text_file(file_path)
-
-    # Normalize the 'field.poseStamped.header.seq' column using Min-Max scaling
-    scaler = MinMaxScaler()
-    data['normalized_seq'] = scaler.fit_transform(data[['field.poseStamped.header.seq']])
-
-    plt.figure(figsize=(10, 6))
-
-    # Plot the relationship between 'field.poseStamped.pose.position.x' and 'normalized_seq' for each file
-    plt.plot(data['normalized_seq'], data['field.poseStamped.pose.position.x'], label='Position X')
-    plt.scatter(data['normalized_seq'].iloc[interaction_start_points], data['field.poseStamped.pose.position.x'].iloc[interaction_start_points], c='g', marker='o', label='Interaction Start')
-    plt.scatter(data['normalized_seq'].iloc[interaction_stop_points], data['field.poseStamped.pose.position.x'].iloc[interaction_stop_points], c='r', marker='x', label='Interaction Stop')
-
-    plt.xlabel('Normalized Sequence (0-1)')
-    plt.ylabel('field.poseStamped.pose.position.x')
-    plt.legend()
-    plt.title(f'Relationship between Position X and Normalized Sequence - {file_name}')
-    plt.show()
-
-    print(f"File: {file_name}")
-    print(f"Interaction Start Points: {interaction_start_points}")
-    print(f"Interaction Stop Points: {interaction_stop_points}")
-    print(f"Total Interaction Time: {total_interaction_time} seconds")
-    print()
-
-"""    
-def calculate_average_interaction_time(directory_path):
-    folder_names = os.listdir(directory_path)
-    average_interaction_times = []
-    std_deviation_interaction_times = []
-
-    for folder_name in folder_names:
-        folder_path = os.path.join(directory_path, folder_name)
-        file_names = os.listdir(folder_path)
-
-        interaction_times = []  # Store interaction times for each file in the folder
-
-        for file_name in file_names:
-            file_path = os.path.join(folder_path, file_name)
-            data, interaction_start_points, interaction_stop_points, total_interaction_time = process_text_file(file_path)
-            interaction_times.append(total_interaction_time)
-
-        # Calculate the average interaction time for this folder (excluding the standard file)
-        interaction_times_without_standard = interaction_times[1:]  # Exclude the first (standard) file
-        average_time = sum(interaction_times_without_standard) / len(interaction_times_without_standard)
-        
-        # Calculate the standard deviation of interaction times
-        std_deviation_time = 0.2 * np.std(interaction_times_without_standard)
-
-        average_interaction_times.append(average_time)
-        std_deviation_interaction_times.append(std_deviation_time)
-
-    return average_interaction_times, std_deviation_interaction_times, folder_names
-
-def plot_average_interaction_times(directory_path):
-    average_interaction_times, std_deviation_interaction_times, folder_names = calculate_average_interaction_time(directory_path)
-
-    # Create a bar plot with error bars for average interaction times of the 5 folders
-    plt.figure(figsize=(10, 6))
-    plt.bar(folder_names, average_interaction_times, yerr=std_deviation_interaction_times, capsize=5)
-    plt.xlabel('Errors')
-    plt.ylabel('Average Interaction Time (s)')
-    plt.title('Average Interaction Time for Each error')
-    plt.show()
-
-
 
 # Directory containing your 5 folders, each with 9 files
-directory_path = '/home/jvp6149/Desktop/bagfiles_Pang/organizedTrial9draw'
+participants = {
+1: "Trial4",
+2: "Trial5",
+3: "Trial6",
+4: "Trial7",
+5: "Trial8",
+6: "Trial9",
+7: "Trial10",
+8: "Trial11",
+}
 
-plot_average_interaction_times(directory_path)
-    
+interaction_times = []  # Store interaction times for each file in the folder
+interaction_data = []	#Store folder name and interaction data
+
+for i in participants:
+	directory_path = '/home/qxa5031/bagfiles_Quentin_copy/'+ participants[i] +'/pour/CP'
+	#print(directory_path)
+	
+	folder_names = os.listdir(directory_path)
+	average_interaction_times = []
+	std_deviation_interaction_times = []
+
+	for folder_name in folder_names:
+		folder_path = os.path.join(directory_path, folder_name)
+		file_names = os.listdir(folder_path)
+
+		for file_name in file_names:
+			singlefile = directory_path + file_name
+			trial = singlefile[singlefile.rfind('P'):singlefile.rfind('.txt')]
+			trial = trial[1:]
+			participant_number = singlefile[singlefile.rfind('Trial'):singlefile.rfind('/p')]
+			participant_number = participant_number[5:]
+			file_path = os.path.join(folder_path, file_name)
+			data, interaction_start_points, interaction_stop_points, total_interaction_time = process_text_file(file_path)
+			interaction_times.append(total_interaction_time)
+			foo = [participant_number, trial, folder_name, total_interaction_time]
+			interaction_data.append(foo)
+			#print(foo)
+		#print(interaction_data)		
+
+pour_collision1 = []
+pour_collision2 = []
+pour_correct = []
+pour_early = []
+pour_sub = []
+
+for i in interaction_data:
+	if i[2] == "pour_collision1":
+		pour_collision1.append(i)            
+	elif i[2] == "pour_collision2":
+		pour_collision2.append(i)
+	elif i[2] == "pour_correct":
+		pour_correct.append(i)
+	elif i[2] == "pour_early":
+		pour_early.append(i)
+	elif i[2] == "pour_sub":
+		pour_sub.append(i)
+					
+all_data = [pour_collision1, pour_collision2, pour_correct, pour_early, pour_sub]
+clean_data = []
+avg_int_time = []
+std_int_time = []
+
+#Taking the standard file out of the data
+for i in all_data:
+	for j in i:	
+		if j[1] != "_pour_correct":
+			clean_data.append(j)
+
+#print(clean_data)
+
+#Writing each element of the clean_data list to a csv for ANOVA
+with open('pour_data.csv', 'w', newline='') as file:
+	writer = csv.writer(file)
+	writer.writerow(['Participant', 'Trial', 'Error Type', 'Interaction Time'])	#Adding the labels to the first row
+	for i in clean_data:		
+		writer.writerow(i)	#Iterating through the clean data and adding each row to the csv
+
+data_points = len(clean_data)
+int_time = []
+
+for i in clean_data:
+	int_time.append(i[3])
+	
+	int_time_sum = sum(int_time)
+
+
+# Calculate the average interaction time
+avg_time = int_time_sum / data_points
+
+#Calculate the standard deviation of interaction times
+std_time = 0.2 * np.std(int_time)
+avg_int_time.append(avg_time)
+std_int_time.append(std_time)
+
 """
-# Directory containing your text files
-directory_path = 'C:/Users/junru/Downloads'
-
-# List of file names you want to process, including "standard_CP.txt" and others
-file_names = ["CP_peg_1.txt", "CP_peg_3.txt", "CP_peg_5.txt", "CP_peg_7.txt", "CP_peg_9.txt"]
-
-# List to store the DataFrames for each file
-dataframes = []
-
-for file_name in file_names:
-    file_path = os.path.join(directory_path, file_name)
-    df = extract_and_normalize_data(file_path)
-
-    if df is not None:
-        df['file_name'] = file_name  # Add a column to store the file name
-        dataframes.append(df)
-
-# Plot the relationship between 'field.poseStamped.pose.position.x' and 'normalized_seq' for each file
-
+# Create a bar plot with error bars for average interaction times of the 5 folders
+labels = ["Obstacle Collision", "Bowl Collision", "Correct", "Early Pour", "Sub-Optimal"]
 plt.figure(figsize=(10, 6))
-for df in dataframes:
-    plt.plot(df['normalized_seq'], df['field.poseStamped.pose.position.x'], label=df.iloc[0]['file_name'])
-
-plt.xlabel('Normalized Sequence')
-plt.ylabel('field.poseStamped.pose.position.x')
-plt.legend()
-plt.title('Relationship between Position X and Normalized Sequence')
+plt.bar(labels, avg_int_time, yerr=std_int_time, capsize=5)
+plt.xlabel('Errors')
+plt.ylabel('Average Interaction Time (s)')
+plt.title('Average Interaction Time for Each error')
 plt.show()
-# Plot the relationship between 'field.poseStamped.pose.position.y' and 'normalized_seq' for each file
-plt.figure(figsize=(10, 6))
-for df in dataframes:
-    plt.plot(df['normalized_seq'], df['field.poseStamped.pose.position.y'], label=df.iloc[0]['file_name'])
-
-plt.xlabel('Normalized Sequence (0-1)')
-plt.ylabel('field.poseStamped.pose.position.y')
-plt.legend()
-plt.title('Relationship between Position Y and Normalized Sequence')
-plt.show()
-
-# Plot the relationship between 'field.poseStamped.pose.position.z' and 'normalized_seq' for each file
-plt.figure(figsize=(10, 6))
-for df in dataframes:
-    plt.plot(df['normalized_seq'], df['field.poseStamped.pose.position.z'], label=df.iloc[0]['file_name'])
-
-plt.xlabel('Normalized Sequence (0-1)')
-plt.ylabel('field.poseStamped.pose.position.z')
-plt.legend()
-plt.title('Relationship between Position Z and Normalized Sequence')
-"""
+""" 
