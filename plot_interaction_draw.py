@@ -59,7 +59,7 @@ def process_text_file(file_path, sampling_rate=1/200):
     df = pd.read_csv(file_path, sep=',')
 
     # Read the standard data (assuming the standard data is in a file named "standard_CP.txt" in the same directory)
-    standard_file_path = os.path.join(os.path.dirname(file_path), "CP_pour_correct.txt")
+    standard_file_path = os.path.join(os.path.dirname(file_path), "CP_draw_correct.txt")
     standard_df = pd.read_csv(standard_file_path, sep=',')
 
     # Ensure that the data frames have the same number of rows
@@ -80,6 +80,8 @@ def process_text_file(file_path, sampling_rate=1/200):
 
     return df, interaction_start_points, interaction_stop_points, total_interaction_time
 
+
+
 # Directory containing your 5 folders, each with 9 files
 participants = {
 1: "Trial4",
@@ -96,7 +98,7 @@ interaction_times = []  # Store interaction times for each file in the folder
 interaction_data = []	#Store folder name and interaction data
 
 for i in participants:
-	directory_path = '/home/qxa5031/bagfiles_Quentin_copy/'+ participants[i] +'/pour/CP'
+	directory_path = '/home/qxa5031/bagfiles_Quentin_copy/'+ participants[i] +'/draw/CP'
 	#print(directory_path)
 	
 	folder_names = os.listdir(directory_path)
@@ -111,7 +113,7 @@ for i in participants:
 			singlefile = directory_path + file_name
 			trial = singlefile[singlefile.rfind('P'):singlefile.rfind('.txt')]
 			trial = trial[1:]
-			participant_number = singlefile[singlefile.rfind('Trial'):singlefile.rfind('/p')]
+			participant_number = singlefile[singlefile.rfind('Trial'):singlefile.rfind('/d')]
 			participant_number = participant_number[5:]
 			file_path = os.path.join(folder_path, file_name)
 			data, interaction_start_points, interaction_stop_points, total_interaction_time = process_text_file(file_path)
@@ -121,25 +123,25 @@ for i in participants:
 			#print(foo)
 		#print(interaction_data)		
 
-pour_collision1 = []
-pour_collision2 = []
-pour_correct = []
-pour_early = []
-pour_sub = []
+draw_bad = []
+draw_correct = []
+draw_notclose = []
+draw_sub = []
+draw_wrong = []
 
 for i in interaction_data:
-	if i[2] == "pour_collision1":
-		pour_collision1.append(i)            
-	elif i[2] == "pour_collision2":
-		pour_collision2.append(i)
-	elif i[2] == "pour_correct":
-		pour_correct.append(i)
-	elif i[2] == "pour_early":
-		pour_early.append(i)
-	elif i[2] == "pour_sub":
-		pour_sub.append(i)
+	if i[2] == "draw_bad(near_miss)":
+		draw_bad.append(i)            
+	elif i[2] == "draw_correct(no_error)":
+		draw_correct.append(i)
+	elif i[2] == "draw_notclose(Failure1))":
+		draw_notclose.append(i)
+	elif i[2] == "draw_sub(safety_error)":
+		draw_sub.append(i)
+	elif i[2] == "draw_wrong(Failure2)":
+		draw_wrong.append(i)
 					
-all_data = [pour_collision1, pour_collision2, pour_correct, pour_early, pour_sub]
+all_data = [draw_bad, draw_correct, draw_notclose, draw_sub, draw_wrong]
 clean_data = []
 avg_int_time = []
 std_int_time = []
@@ -147,13 +149,13 @@ std_int_time = []
 #Taking the standard file out of the data
 for i in all_data:
 	for j in i:	
-		if j[1] != "_pour_correct":
+		if j[1] != "_draw_correct":
 			clean_data.append(j)
 
 #print(clean_data)
 
 #Writing each element of the clean_data list to a csv for ANOVA
-with open('pour_data.csv', 'w', newline='') as file:
+with open('draw_data.csv', 'w', newline='') as file:
 	writer = csv.writer(file)
 	writer.writerow(['Participant', 'Trial', 'Error Type', 'Interaction Time'])	#Adding the labels to the first row
 	for i in clean_data:		
@@ -178,11 +180,11 @@ std_int_time.append(std_time)
 
 """
 # Create a bar plot with error bars for average interaction times of the 5 folders
-labels = ["Obstacle Collision", "Bowl Collision", "Correct", "Early Pour", "Sub-Optimal"]
+all_errors_labels = ["Poor Erase", "Correct", "Not Close", "Sub-Optimal", "Wrong Shape"]
 plt.figure(figsize=(10, 6))
-plt.bar(labels, avg_int_time, yerr=std_int_time, capsize=5)
+plt.bar(all_errors_labels, avg_int_time, yerr=std_int_time, capsize=5)
 plt.xlabel('Errors')
 plt.ylabel('Average Interaction Time (s)')
 plt.title('Average Interaction Time for Each error')
-plt.show()
-""" 
+plt.show() 
+"""
