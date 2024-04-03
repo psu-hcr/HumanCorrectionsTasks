@@ -1,255 +1,181 @@
-import pandas as pd
-import os
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 
-# Define a function to extract data from a text file and normalize the 'field.poseStamped.header.seq' column
-def extract_and_normalize_data(file_path):
-    if not os.path.isfile(file_path):
-        print(f"File not found: {file_path}")
-        return None
+import os
 
-    # Read the text file into a DataFrame
-    df = pd.read_csv(file_path, sep=',')
+import matplotlib.pyplot as plt
+ 
+# Define dimensions of the KUKA LBR iiwa14 robot in millimeters
 
-    # Normalize the 'field.poseStamped.header.seq' column
-    scaler = MinMaxScaler()
-    df['normalized_seq'] = scaler.fit_transform(df[['field.poseStamped.header.seq']])
+link_lengths = [360, 210, 210, 200, 200, 126, 126]  # Link lengths in millimeters
+ 
+# Function to identify interaction start and stop points
 
-    return df
+def find_interaction_points(file_path, standard_torques, standard_seq):
 
+    # Read data from file
 
+    data = np.genfromtxt(file_path, delimiter=',', skip_header=1)
+ 
+    # Extract relevant data
 
+    seq = data[:, 0]
 
-def find_interaction_points(data, standard_data, threshold1=0.01, threshold2=0.005):
+    torques = data[:, 4:11]  # Assuming torques are from a1 to a7
+ 
     interaction_start_points = []
+
     interaction_stop_points = []
+ 
+    for i in range(len(torques)):
 
-    start_found = False
-    for i in range(len(data)):
-        if i >= len(standard_data):
-            break  # Ensure we don't go out of bounds in the standard data
+        # Calculate absolute difference between torques and standard torques
 
-        diff_x = abs(data['field.poseStamped.pose.position.x'].iloc[i] - standard_data['field.poseStamped.pose.position.x'].iloc[i])
-        diff_y = abs(data['field.poseStamped.pose.position.y'].iloc[i] - standard_data['field.poseStamped.pose.position.y'].iloc[i])
-        diff_z = abs(data['field.poseStamped.pose.position.z'].iloc[i] - standard_data['field.poseStamped.pose.position.z'].iloc[i])
+        diff = np.abs(torques[i] - standard_torques[i])
+ 
+        # Check if difference exceeds thresholds for interaction start and stop
 
-        if not start_found:
-            if diff_x > threshold2 or diff_y > threshold2 or diff_z > threshold2:
-                interaction_start_points.append(i)
-                start_found = True
-        else:
-            if diff_x < threshold1 and diff_y < threshold1 and diff_z < threshold1:
-                interaction_stop_points.append(i)
-                start_found = False
+        if np.any(diff > 0.05):
 
-    # If the number of start points is greater than the number of stop points, add the last data point as a stop point
+            interaction_start_points.append(i)
+
+        elif np.all(diff < 0.05) and len(interaction_start_points) > 0:
+
+            interaction_stop_points.append(i)
+ 
+    # If interaction stop point not found after start point, assume last sequence number as stop point
+
     if len(interaction_start_points) > len(interaction_stop_points):
-        interaction_stop_points.append(len(data) - 1)
 
+        interaction_stop_points.append(len(standard_seq) - 1)
+ 
     return interaction_start_points, interaction_stop_points
+ 
+# Function to calculate total interaction torque difference for joints 4, 5, and 6
 
-def process_text_file(file_path, standard_file_path, sampling_rate=1/500):
-    if not os.path.isfile(file_path):
-        print(f"File not found: {file_path}")
-        return None
-
-    # Read the text file into a DataFrame
-    df = pd.read_csv(file_path, sep=',')
-
-    # Read the standard data (assuming the standard data is in a file named "standard_CP.txt" in the same directory)
-    # standard_file_path = os.path.join(os.path.dirname(file_path), "CP_peg_correct.txt")
-    standard_df = pd.read_csv(standard_file_path, sep=',')
-
-    # Ensure that the data frames have the same number of rows
-    max_length = min(len(df), len(standard_df))
-    df = df.iloc[:max_length]
-    standard_df = standard_df.iloc[:max_length]
+def calculate_total_torque_difference(file_path, standard_torques, standard_seq):
 
     # Find interaction points
-    interaction_start_points, interaction_stop_points = find_interaction_points(df, standard_df)
 
-    # Calculate total interaction time
-    total_interaction_time = 0
+    interaction_start_points, interaction_stop_points = find_interaction_points(file_path, standard_torques, standard_seq)
+ 
+    # Read data from file
+
+    data = np.genfromtxt(file_path, delimiter=',', skip_header=1)
+ 
+    # Extract relevant data
+
+    seq = data[:, 0]
+
+    torques = data[:, 4:11]  # Assuming torques are from a1 to a7
+ 
+    # Calculate total torque difference for joints 4, 5, and 6
+
+    total_torque_diff = np.zeros(3)
+
     for start, stop in zip(interaction_start_points, interaction_stop_points):
-        # Check for out-of-bounds indices
-        if start < len(df) and stop < len(df):
-            time_period = (stop - start) * sampling_rate
-            total_interaction_time += time_period
 
-    return df, interaction_start_points, interaction_stop_points, total_interaction_time
-"""
-# Directory containing your text files
-directory_path_correct = '/home/jvp6149/Desktop/bagfiles_Pang/organized Tiral 9/peg_correct'
+        diff = np.abs(np.sum(torques[start:stop + 1, 3:6], axis=0) - np.sum(standard_torques[start:stop + 1, 3:6], axis=0))
 
-# List of file names you want to process, including "standard_CP.txt" and others
-file_names_correct = ["CP_peg_correct.txt", "CP_peg_1_correct.txt", "CP_peg_2_correct.txt", "CP_peg_4.txt", "CP_peg_6.txt", "CP_peg_14.txt", "CP_peg_16.txt", "CP_peg_26.txt", "CP_peg_37.txt"]
+        total_torque_diff += diff
+ 
+    return total_torque_diff
+ 
+# Function to calculate average interaction force from multiple files in a folder
 
-for file_name in file_names_correct:
-    file_path = os.path.join(directory_path_correct, file_name)
-    data, interaction_start_points, interaction_stop_points, total_interaction_time = process_text_file(file_path)
+def calculate_average_interaction_force(folder_path):
 
-    # Normalize the 'field.poseStamped.header.seq' column using Min-Max scaling
-    scaler = MinMaxScaler()
-    data['normalized_seq'] = scaler.fit_transform(data[['field.poseStamped.header.seq']])
+    total_force = 0
 
-    plt.figure(figsize=(10, 6))
+    num_files = 0
+ 
+    # Read standard torques from standard_JT.txt
 
-    # Plot the relationship between 'field.poseStamped.pose.position.x' and 'normalized_seq' for each file
-    plt.plot(data['normalized_seq'], data['field.poseStamped.pose.position.x'], label='Position X')
-    plt.scatter(data['normalized_seq'].iloc[interaction_start_points], data['field.poseStamped.pose.position.x'].iloc[interaction_start_points], c='g', marker='o', label='Interaction Start')
-    plt.scatter(data['normalized_seq'].iloc[interaction_stop_points], data['field.poseStamped.pose.position.x'].iloc[interaction_stop_points], c='r', marker='x', label='Interaction Stop')
+    standard_file_path = os.path.join(folder_path, "standard.txt")
 
-    plt.xlabel('Normalized Sequence (0-1)')
-    plt.ylabel('field.poseStamped.pose.position.x')
-    plt.legend()
-    plt.title(f'Relationship between Position X and Normalized Sequence - {file_name}')
-    plt.show()
+    standard_data = np.genfromtxt(standard_file_path, delimiter=',', skip_header=1)
 
-    print(f"File: {file_name}")
-    print(f"Interaction Start Points: {interaction_start_points}")
-    print(f"Interaction Stop Points: {interaction_stop_points}")
-    print(f"Total Interaction Time: {total_interaction_time} seconds")
-    print()
+    standard_seq = standard_data[:, 0]
 
-"""    
-def calculate_average_interaction_time(directory_path):
-    folder_names = os.listdir(directory_path)
-    average_interaction_times = []
-    std_deviation_interaction_times = []
+    standard_torques = standard_data[:, 4:11]  # Assuming torques are from a1 to a7
+ 
+    # Iterate over files in the folder
 
-    for folder_name in folder_names:
-        folder_path = os.path.join(directory_path, folder_name)
-        file_names = os.listdir(folder_path)
+    for filename in os.listdir(folder_path):
 
-        interaction_times = []  # Store interaction times for each file in the folder
-        
-        
+        if filename.endswith(".txt") and filename != "standard.txt":
 
-        for file_name in file_names:
-            file_path = os.path.join(folder_path, file_name)
-            standard_file_path = os.path.join(os.path.dirname(file_path), "CP_peg_correct.txt")
-            data, interaction_start_points, interaction_stop_points, total_interaction_time = process_text_file(file_path, standard_file_path)
-            interaction_times.append(total_interaction_time)
+            file_path = os.path.join(folder_path, filename)
+ 
+            # Calculate total torque difference for joints 4, 5, and 6
 
-        # Calculate the average interaction time for this folder (excluding the standard file)
-        interaction_times_without_standard = interaction_times[1:]  # Exclude the first (standard) file
-        average_time = sum(interaction_times_without_standard) / len(interaction_times_without_standard)
-        
-        # Calculate the standard deviation of interaction times
-        std_deviation_time = 0.3 * np.std(interaction_times_without_standard)
+            total_torque_diff = calculate_total_torque_difference(file_path, standard_torques, standard_seq)
+ 
+            # Convert torque difference to force difference along y-axis for each joint
 
-        average_interaction_times.append(average_time)
-        std_deviation_interaction_times.append(std_deviation_time)
+            total_force += np.sum(0.001*total_torque_diff / link_lengths[3:6])  # Add converted forces for joints 4, 5, and 6
 
-    return average_interaction_times, std_deviation_interaction_times, folder_names
+            num_files += 1
+ 
+    # Calculate average force
 
-def plot_average_interaction_times(directory_path):
-    average_interaction_times, std_deviation_interaction_times, folder_names = calculate_average_interaction_time(directory_path)
+    if num_files > 0:
 
-    # Create a bar plot with error bars for average interaction times of the 5 folders
-    plt.figure(figsize=(10, 6))
-    plt.bar(folder_names, average_interaction_times, yerr=std_deviation_interaction_times, capsize=5)
-    plt.xlabel('Errors')
-    plt.ylabel('Average Interaction Time (s)')
-    plt.title('Average Interaction Time for Each error')
-    plt.show()
+        average_force = total_force / num_files 
 
+        return average_force
 
-"""
-# Directory containing your 5 folders, each with 9 files
-directory_path = '/home/jvp6149/Desktop/bagfiles_Pang/organizedTiral9peg'
+    else:
 
-plot_average_interaction_times(directory_path)
+        return None
+ 
+# Directory containing folders
 
-"""
-"""
-# Directory containing your text files
-directory_path = 'C:/Users/junru/Downloads'
+main_directory = "/Users/pang/Desktop/PSU/HumanCorrection_copy/torque/peg_torque"  # Change this to your main directory path
+ 
+# Initialize lists to store average interaction forces for each folder
 
-# List of file names you want to process, including "standard_CP.txt" and others
-file_names = ["CP_peg_1.txt", "CP_peg_3.txt", "CP_peg_5.txt", "CP_peg_7.txt", "CP_peg_9.txt"]
+average_interaction_forces = []
 
-# List to store the DataFrames for each file
-dataframes = []
+folder_names = []
+ 
+# Iterate over folders in the main directory
 
-for file_name in file_names:
-    file_path = os.path.join(directory_path, file_name)
-    df = extract_and_normalize_data(file_path)
+for folder_name in os.listdir(main_directory):
 
-    if df is not None:
-        df['file_name'] = file_name  # Add a column to store the file name
-        dataframes.append(df)
+    folder_path = os.path.join(main_directory, folder_name)
 
-# Plot the relationship between 'field.poseStamped.pose.position.x' and 'normalized_seq' for each file
+    if os.path.isdir(folder_path):
 
-plt.figure(figsize=(10, 6))
-for df in dataframes:
-    plt.plot(df['normalized_seq'], df['field.poseStamped.pose.position.x'], label=df.iloc[0]['file_name'])
+        folder_names.append(folder_name)
 
-plt.xlabel('Normalized Sequence')
-plt.ylabel('field.poseStamped.pose.position.x')
-plt.legend()
-plt.title('Relationship between Position X and Normalized Sequence')
+        # Calculate average interaction force for the folder
+
+        average_interaction_force = calculate_average_interaction_force(folder_path)
+
+        if average_interaction_force is not None:
+
+            average_interaction_forces.append(average_interaction_force)
+ 
+# Convert list of average interaction forces to numpy array
+
+average_interaction_forces = np.array(average_interaction_forces)
+ 
+# Plot bar plot
+
+fig, ax = plt.subplots()
+
+labels = folder_names
+
+x = np.arange(len(labels))
+
+ax.bar(x, average_interaction_forces, tick_label=labels)
+
+ax.set_xlabel('Error type')
+
+ax.set_ylabel('Total Interaction Force N')
+
+ax.set_title('Total Interaction Force for Draw Task')
+
+plt.xticks(rotation=45)
+
 plt.show()
-# Plot the relationship between 'field.poseStamped.pose.position.y' and 'normalized_seq' for each file
-plt.figure(figsize=(10, 6))
-for df in dataframes:
-    plt.plot(df['normalized_seq'], df['field.poseStamped.pose.position.y'], label=df.iloc[0]['file_name'])
-
-plt.xlabel('Normalized Sequence (0-1)')
-plt.ylabel('field.poseStamped.pose.position.y')
-plt.legend()
-plt.title('Relationship between Position Y and Normalized Sequence')
-plt.show()
-
-# Plot the relationship between 'field.poseStamped.pose.position.z' and 'normalized_seq' for each file
-plt.figure(figsize=(10, 6))
-for df in dataframes:
-    plt.plot(df['normalized_seq'], df['field.poseStamped.pose.position.z'], label=df.iloc[0]['file_name'])
-
-plt.xlabel('Normalized Sequence (0-1)')
-plt.ylabel('field.poseStamped.pose.position.z')
-plt.legend()
-plt.title('Relationship between Position Z and Normalized Sequence')
-"""
-def extract_and_plot_average_torque(subfolder_path):
-    subfolder_files = os.listdir(subfolder_path)
-    torque_data = []  # Store torque data for each file in the subfolder
-
-    for file_name in subfolder_files:
-        file_path = os.path.join(subfolder_path, file_name)
-        data, interaction_start_points, interaction_stop_points, _ = process_text_file(file_path)
-
-        # Extract torque data between interaction start and stop points
-        torque_data_per_file = []
-        for start, stop in zip(interaction_start_points, interaction_stop_points):
-            torque_data_per_interaction = data.iloc[start:stop+1]  # Include the stop point
-            torque_data_per_file.append(torque_data_per_interaction)
-
-        # Calculate the average torque for each a1 to a7
-        avg_torque_per_file = np.mean([file_data.loc[:, 'field.torque.a1':'field.torque.a7'] for file_data in torque_data_per_file], axis=0)
-        torque_data.append(avg_torque_per_file)
-
-    # Calculate the average torque for the subfolder
-    avg_torque_subfolder = np.mean(torque_data, axis=0)
-
-    # Plot the average torque for a1 to a7
-    plt.figure(figsize=(10, 6))
-    for i in range(7):
-        plt.plot(avg_torque_subfolder.iloc[:, i], label=f'a{i+1}')
-    plt.xlabel('Time Steps')
-    plt.ylabel('Average Torque')
-    plt.legend()
-    plt.title('Average Torque for a1 to a7')
-    plt.show()
-
-# Directory containing the subfolders with text files for torque data
-subfolder_directory = '/home/jvp6149/Desktop/bagfiles_Pang/Torque'
-
-subfolder_names = os.listdir(subfolder_directory)
-for subfolder_name in subfolder_names:
-    subfolder_path = os.path.join(subfolder_directory, subfolder_name)
-    extract_and_plot_average_torque(subfolder_path)
