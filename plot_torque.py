@@ -76,11 +76,49 @@ def calculate_total_torque_difference(file_path, standard_torques, standard_seq)
 
         diff = np.abs(np.sum(torques[start:stop + 1, 3:6], axis=0) - np.sum(standard_torques[start:stop + 1, 3:6], axis=0))
 
-        total_torque_diff += diff
+        total_torque_diff += 5*diff
  
     return total_torque_diff
  
 # Function to calculate average interaction force from multiple files in a folder
+
+# Function to calculate Jacobian matrix
+def calculate_jacobian(theta, link_lengths):
+    l1, l2, l3, l4, l5, l6 = link_lengths
+    
+    # Joint angles (convert to radians)
+    theta1, theta2, theta3, theta4, theta5, theta6, theta7 = np.radians(theta)
+
+    # Jacobian matrix components
+    J11 = -l2 * np.sin(theta2) - l3 * np.sin(theta2 + theta3) - l4 * np.sin(theta2 + theta3 + theta4) - l5 * np.sin(theta2 + theta3 + theta4 + theta5) - l6 * np.sin(theta2 + theta3 + theta4 + theta5 + theta6) - l1 * np.sin(theta2 + theta3 + theta4 + theta5 + theta6 + theta1)
+    J12 = -l3 * np.sin(theta2 + theta3) - l4 * np.sin(theta2 + theta3 + theta4) - l5 * np.sin(theta2 + theta3 + theta4 + theta5) - l6 * np.sin(theta2 + theta3 + theta4 + theta5 + theta6) - l2 * np.sin(theta2)
+    J13 = -l4 * np.sin(theta2 + theta3 + theta4) - l5 * np.sin(theta2 + theta3 + theta4 + theta5) - l6 * np.sin(theta2 + theta3 + theta4 + theta5 + theta6) - l3 * np.sin(theta2 + theta3)
+    J14 = -l5 * np.sin(theta2 + theta3 + theta4 + theta5) - l6 * np.sin(theta2 + theta3 + theta4 + theta5 + theta6) - l4 * np.sin(theta2 + theta3 + theta4)
+    J15 = -l6 * np.sin(theta2 + theta3 + theta4 + theta5 + theta6) - l5 * np.sin(theta2 + theta3 + theta4 + theta5)
+    J16 = -l6 * np.sin(theta2 + theta3 + theta4 + theta5 + theta6)
+    J17 = 0
+
+    J21 = l2 * np.cos(theta2) + l3 * np.cos(theta2 + theta3) + l4 * np.cos(theta2 + theta3 + theta4) + l5 * np.cos(theta2 + theta3 + theta4 + theta5) + l6 * np.cos(theta2 + theta3 + theta4 + theta5 + theta6) + l1 * np.cos(theta2 + theta3 + theta4 + theta5 + theta6 + theta1)
+    J22 = l3 * np.cos(theta2 + theta3) + l4 * np.cos(theta2 + theta3 + theta4) + l5 * np.cos(theta2 + theta3 + theta4 + theta5) + l6 * np.cos(theta2 + theta3 + theta4 + theta5 + theta6) + l2 * np.cos(theta2)
+    J23 = l4 * np.cos(theta2 + theta3 + theta4) + l5 * np.cos(theta2 + theta3 + theta4 + theta5) + l6 * np.cos(theta2 + theta3 + theta4 + theta5 + theta6) + l3 * np.cos(theta2 + theta3)
+    J24 = l5 * np.cos(theta2 + theta3 + theta4 + theta5) + l6 * np.cos(theta2 + theta3 + theta4 + theta5 + theta6) + l4 * np.cos(theta2 + theta3 + theta4)
+    J25 = l6 * np.cos(theta2 + theta3 + theta4 + theta5 + theta6) + l5 * np.cos(theta2 + theta3 + theta4 + theta5)
+    J26 = l6 * np.cos(theta2 + theta3 + theta4 + theta5 + theta6)
+    J27 = 0
+
+    J31 = 0
+    J32 = 0
+    J33 = 0
+    J34 = 0
+    J35 = 0
+    J36 = 0
+    J37 = 1
+
+    J = np.array([[J11, J12, J13, J14, J15, J16, J17],
+                  [J21, J22, J23, J24, J25, J26, J27],
+                  [J31, J32, J33, J34, J35, J36, J37]])
+    
+    return J
 
 def calculate_average_interaction_force(folder_path):
 
@@ -112,7 +150,7 @@ def calculate_average_interaction_force(folder_path):
  
             # Convert torque difference to force difference along y-axis for each joint
 
-            total_force += np.sum(0.001*total_torque_diff / link_lengths[3:6])  # Add converted forces for joints 4, 5, and 6
+            total_force += np.sum(total_torque_diff / link_lengths[3:6]*0.001)  # Add converted forces for joints 4, 5, and 6
 
             num_files += 1
  
@@ -130,7 +168,7 @@ def calculate_average_interaction_force(folder_path):
  
 # Directory containing folders
 
-main_directory = "/Users/pang/Desktop/PSU/HumanCorrection_copy/torque/peg_torque"  # Change this to your main directory path
+main_directory = "/Users/pang/Desktop/PSU/HumanCorrection_copy/torque/draw_torque"  # Change this to your main directory path
  
 # Initialize lists to store average interaction forces for each folder
 
